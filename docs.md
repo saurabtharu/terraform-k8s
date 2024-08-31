@@ -266,3 +266,61 @@ resource "aws_security_group" "k8s_setup_sg_flannel" {
 
 `$ terraform plan` <br>
 `$ terraform apply -auto-approve` <br>
+
+
+
+
+## Step 4: Create Key Pair resource
+
+
+### install `hashicorp/tls` provider by adding below code in `terraform > required_providers` block as below 
+
+```diff
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
++    tls = {
++      source = "hashicorp/tls"
++      version = "4.0.5"
++    }
+  }
+}
+```
+also add following in file `variables.tf`
+
+```hcl
+variable "key_pair_name" {
+  type = string
+  description = "Name of key pair"
+  default = "setup_key"
+}
+```
+
+add `tls_private_key` in file `main.tf`.
+
+```hcl
+resource "tls_private_key" "k8s_setup_private_key" {
+  algorithm =  "RSA"
+  rsa_bits  = 4096
+
+  provisioner "local-exec" {
+    command = "echo '${self.public_key_pem}' > ./pubkey.pem"
+  }
+}
+
+
+resource "aws_key_pair" "k8s_setup_key_pair" {
+  key_name = var.key_pair_name
+  public_key = tls_private_key.k8s_setup_private_key.public_key_openssh
+
+
+  provisioner "local-exec" {
+    command = "echo '${tls_private_key.k8s_setup_private_key.private_key_pem}' > ./private-key.pem"
+  }
+}
+```
+
+

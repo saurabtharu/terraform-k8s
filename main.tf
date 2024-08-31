@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    tls = {
+      source = "hashicorp/tls"
+      version = "4.0.5"
+    }
   }
 }
 
@@ -233,6 +237,39 @@ resource "aws_security_group" "k8s_setup_sg_flannel" {
   }
 }
 
+
+
+#######################
+#   KEY PAIR
+#######################
+
+resource "tls_private_key" "k8s_setup_private_key" {
+  algorithm =  "RSA"
+  rsa_bits  = 4096
+
+  provisioner "local-exec" {
+    command = "echo '${self.public_key_pem}' > ./pubkey.pem"
+  }
+}
+
+
+resource "aws_key_pair" "k8s_setup_key_pair" {
+  key_name = var.key_pair_name
+  public_key = tls_private_key.k8s_setup_private_key.public_key_openssh
+
+
+  provisioner "local-exec" {
+    command = "echo '${tls_private_key.k8s_setup_private_key.private_key_pem}' > ./private-key.pem"
+  }
+}
+
+
+
+
+
+
+
 ###################################
 #  Ansbile RELATED RESOURCES SETUP
 ###################################
+
