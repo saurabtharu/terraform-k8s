@@ -52,3 +52,43 @@ resource "aws_vpc" "k8s_setup_vpc" {
 `$ terraform plan`
 `$ terraform apply -auto-aprove`
 
+### 2. Subnet 
+
+
+```hcl
+## 2. Subnet 
+resource "aws_subnet" "k8s_setup_subnet" {
+  vpc_id     = aws_vpc.k8s_setup_vpc.id
+  cidr_block = "10.0.1.0/24"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "k8s_setup_subnet"
+  }  
+}
+```
+
+
+`$ terraform plan`
+`$ terraform apply -auto-aprove`
+
+
+### 3. internet gateway
+
+
+```hcl
+## 3. internet gateway /* allow VPC to connect to internet  */
+resource "aws_internet_gateway" "k8s_setup_igw" {
+  vpc_id = aws_vpc.k8s_setup_vpc.id
+
+  tags = {
+    Name = "k8s_setup_igw"
+  }
+
+}
+
+```
+
+`$ terraform plan`
+`$ terraform apply -auto-aprove`
+
