@@ -29,3 +29,6 @@ provider "aws" {
 
 `$ terraform init`
 
+This command will download the `hashicorp/aws` module of terraform
+
+
