@@ -55,7 +55,28 @@ resource "aws_internet_gateway" "k8s_setup_igw" {
 }
 
 ## 4. custom route table setup
+resource "aws_route_table" "k8s_setup_route_table" {
+  vpc_id = aws_vpc.k8s_setup_vpc.id 
+
+  route {
+    cidr_block = "0.0.0.0/0"     /* to allow traffic from anywhere */
+    gateway_id = aws_internet_gateway.k8s_setup_igw.id
+  }
+
+  tags = {
+    Name = "K8s Setup Route Table"
+  }
+}
+
+
 ## 5. associate route table to the subnet setup
+/* creating association of previously created route table with subnet*/
+
+resource "aws_route_table_association" "k8s_setup_route_association" {
+  subnet_id      = aws_subnet.k8s_setup_subnet.id
+  route_table_id = aws_route_table.k8s_setup_route_table.id
+}
+
 ## 6. security groups setup
 
 

@@ -27,7 +27,7 @@ provider "aws" {
 }
 ```
 
-`$ terraform init`
+`$ terraform init` <br>
 
 This command will download the `hashicorp/aws` module of terraform
 
@@ -49,8 +49,8 @@ resource "aws_vpc" "k8s_setup_vpc" {
 ```
 
 
-`$ terraform plan`
-`$ terraform apply -auto-aprove`
+`$ terraform plan` <br>
+`$ terraform apply -auto-aprove` <br>
 
 ### 2. Subnet 
 
@@ -69,8 +69,8 @@ resource "aws_subnet" "k8s_setup_subnet" {
 ```
 
 
-`$ terraform plan`
-`$ terraform apply -auto-aprove`
+`$ terraform plan` <br>
+`$ terraform apply -auto-aprove` <br>
 
 
 ### 3. internet gateway
@@ -89,6 +89,42 @@ resource "aws_internet_gateway" "k8s_setup_igw" {
 
 ```
 
-`$ terraform plan`
-`$ terraform apply -auto-aprove`
+`$ terraform plan` <br>
+`$ terraform apply -auto-approve` <br>
+
+### 4. custom route table
+
+```hcl
+
+## 4. custom route table
+resource "aws_route_table" "k8s_setup_route_table" {
+  vpc_id = aws_vpc.k8s_setup_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"     /* to allow traffic from anywhere */
+    gateway_id = aws_internet_gateway.k8s_setup_igw.id
+  }
+
+  tags = {
+    Name = "example"
+  }
+}
+```
+
+`$ terraform plan` <br>
+`$ terraform apply -auto-approve` <br>
+
+
+### 5. associate route table to the subnet
+
+```hcl
+/* creating association of previously created route table with subnet*/
+
+resource "aws_route_table_association" "k8s_setup_route_association" {
+  subnet_id      = aws_subnet.k8s_setup_subnet.id
+  route_table_id = aws_route_table.k8s_setup_route_table.id
+}
+```
+`$ terraform plan` <br>
+`$ terraform apply -auto-approve` <br>
 
