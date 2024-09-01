@@ -265,6 +265,63 @@ resource "aws_key_pair" "k8s_setup_key_pair" {
 
 
 
+#########################
+#  INSTANCES SETUP
+#########################
+
+resource "aws_instance" "k8s-control-plane" {
+  ami      = var.rhel_ami
+  instance_type = "t2.medium"
+
+  key_name = aws_key_pair.k8s_setup_key_pair.key_name
+  associate_public_ip_address = true
+  security_groups = [
+    aws_security_group.k8s_setup_sg_common.name,
+    aws_security_group.k8s_setup_sg_control_plane.name,
+    aws_security_group.k8s_setup_sg_flannel.name
+  ]
+
+  root_block_device {
+    volume_size = 14
+    volume_type = "gp2"
+  }
+
+  tags = {
+    Name = "K8s Control Plane"
+    Role = "Control Plane"
+  }
+
+  provisioner "local-exec" {
+    command = "echo 'master ${self.public_ip}' >> ./files/hosts"
+  }
+}
+
+
+
+resource "aws_instance" "k8s-data-plane" {
+  count = var.data_plane_count
+  ami = var.rhel_ami
+  instance_type = var.k8s_setup_instance_type
+
+  key_name = aws_key_pair.k8s_setup_key_pair.key_name
+  associate_public_ip_address = true
+  
+  security_groups = [
+    aws_security_group.k8s_setup_sg_common.name,
+    aws_security_group.k8s_setup_sg_data_plane.name,
+    aws_security_group.k8s_setup_sg_flannel.name
+  ]
+
+  tags = {
+    Name = "K8s Data Plane - ${count.index}"
+    Role = "Data Plane"
+  }
+   
+  provisioner "local-exec" {
+    command = "echo 'worker-${count.index} ${self.public_ip}' >> ./files/hosts"
+  }
+}
+
 
 
 

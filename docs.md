@@ -324,3 +324,93 @@ resource "aws_key_pair" "k8s_setup_key_pair" {
 ```
 
 
+## Step 5: Setting up EC2 instance in AWS 
+
+
+### For master-node (`control-plane`)
+
+```hcl
+resource "aws_instance" "k8s-control-plane" {
+  ami      = var.rhel_ami
+  instance_type = "t2.medium"
+
+  key_name = aws_key_pair.k8s_setup_key_pair.key_name
+  associate_public_ip_address = true
+  security_groups = [
+    aws_security_group.k8s_setup_sg_common.name,
+    aws_security_group.k8s_setup_sg_control_plane.name,
+    aws_security_group.k8s_setup_sg_flannel.name
+  ]
+
+  root_block_device {
+    volume_size = 14
+    volume_type = "gp2"
+  }
+
+  tags = {
+    Name = "K8s Control Plane"
+    Role = "Control Plane"
+  }
+
+  provisioner "local-exec" {
+    command = "echo 'master ${self.public_ip}' >> ./files/hosts"
+  }
+}
+```
+
+here variables `rhel_ami` is used so add following in `variables.tf`
+
+```hcl
+variable "rhel_ami" {
+  type = string
+  description = "ami id for EC2 instance"
+  default = "ami-0583d8c7a9c35822c"
+}
+```
+
+
+### For worker-node (`data-plane`)
+
+```hcl
+resource "aws_instance" "k8s-data-plane" {
+  count = var.data_plane_count
+  ami = var.rhel_ami
+  instance_type = var.k8s_setup_instance_type
+
+  key_name = aws_key_pair.k8s_setup_key_pair.key_name
+  associate_public_ip_address = true
+  
+  security_groups = [
+    aws_security_group.k8s_setup_sg_common.name,
+    aws_security_group.k8s_setup_sg_data_plane.name,
+    aws_security_group.k8s_setup_sg_flannel.name
+  ]
+
+  tags = {
+    Name = "K8s Data Plane - ${count.index}"
+    Role = "Data Plane"
+  }
+   
+  provisioner "local-exec" {
+    command = "echo 'worker-${count.index} ${self.public_ip}' >> ./files/hosts"
+  }
+}
+```
+
+since, new variables `data_plane_count` and `k8s_setup_instance_type` are used declare them in `variables.tf` file as below
+
+```hcl
+variable "data_plane_count" {
+  type = number
+  description = "The number of worker nodes (data plane) in cluster"
+  default = 2
+
+}
+
+variable "k8s_setup_instance_type" {
+  type = string
+  description = "Value for EC2 instance type "
+  default = "t2.micro"
+
+}
+```
