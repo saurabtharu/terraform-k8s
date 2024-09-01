@@ -129,7 +129,7 @@ resource "aws_security_group" "k8s_setup_sg_common" {
     from_port       = 0
     to_port         = 0
     protocol        = "-1"
-    cidr_blocks = ["0.0.0.0/24"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
