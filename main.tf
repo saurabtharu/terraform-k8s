@@ -8,6 +8,10 @@ terraform {
       source = "hashicorp/tls"
       version = "4.0.5"
     }
+    ansible = {
+      version = "~> 1.3.0"
+      source  = "ansible/ansible"
+    }
   }
 }
 
@@ -252,7 +256,6 @@ resource "tls_private_key" "k8s_setup_private_key" {
   }
 }
 
-
 resource "aws_key_pair" "k8s_setup_key_pair" {
   key_name = var.key_pair_name
   public_key = tls_private_key.k8s_setup_private_key.public_key_openssh
@@ -329,4 +332,33 @@ resource "aws_instance" "k8s-data-plane" {
 ###################################
 #  Ansbile RELATED RESOURCES SETUP
 ###################################
+resource "ansible_host" "k8s_setup_master_node" {
+  depends_on = [ 
+    aws_instance.k8s-control-plane
+  ]
 
+  name = "control-plane"
+  groups = ["master"]
+  variables = {
+    ansible_user = "ec2-user"
+    ansible_host = aws_instance.k8s-control-plane.public_ip
+    ansible_ssh_private_key_file = "./private-key.pem"
+    node_hostname = "master"
+  }
+}
+
+resource "ansible_host" "k8s_setup_worker_node" {
+  depends_on = [ 
+    aws_instance.k8s-data-plane
+  ]
+
+  count = 2
+  name = "worker-${count.index}"
+  groups = ["workers"]
+  variables = {
+    ansible_user = "ec2-user"
+    ansible_host = aws_instance.k8s-data-plane[count.index].public_ip
+    ansible_ssh_private_key_file = "./private-key.pem"
+    node_hostname = "worker-${count.index}"
+  }
+}

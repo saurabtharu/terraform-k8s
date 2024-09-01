@@ -414,3 +414,97 @@ variable "k8s_setup_instance_type" {
 
 }
 ```
+
+
+
+## Step 6: Setting up Ansible 
+
+### install `ansible/ansible` provider by adding below code in `terraform > required_providers` block as below 
+
+```diff
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    tls = {
+      source = "hashicorp/tls"
+      version = "4.0.5"
+    }
++    ansible = {
++      version = "~> 1.3.0"
++      source  = "ansible/ansible"
++    }
+  }
+}
+```
+
+Create `inventory.yaml` file and add the following file in the file
+
+```yaml
+---
+plugin: cloud.terraform.terraform_provider
+```
+
+Run command 
+```bash
+ansible-galaxy collection install cloud.terraform
+```
+
+
+Now add the following resources to the file `main.tf`
+
+```hcl
+resource "ansible_host" "k8s_setup_master_node" {
+  depends_on = [ 
+    aws_instance.k8s-control-plane
+  ]
+
+  name = "control-plane"
+  groups = ["master"]
+  variables = {
+    ansible_user = "ec2-user"
+    ansible_host = aws_instance.k8s-control-plane.public_ip
+    ansible_ssh_private_key_file = "./private-key.pem"
+    node_hostname = "master"
+  }
+}
+
+resource "ansible_host" "k8s_setup_worker_node" {
+  depends_on = [ 
+    aws_instance.k8s-data-plane
+  ]
+
+  count = var.data_plane_count
+  name = "worker-${count.index}"
+  groups = ["workers"]
+  variables = {
+    ansible_user = "ec2-user"
+    ansible_host = aws_instance.k8s-data-plane[count.index].public_ip
+    ansible_ssh_private_key_file = "./private-key.pem"
+    node_hostname = "worker-${count.index}"
+  }
+}
+```
+
+
+`tf apply`
+
+
+now you can see the ansible hosts created using command 
+`ansible-inventory -i inventory.yaml --graph`
+
+```bash
+user@my-computer ~/k8s-terraform-ansible (master)> ansible-inventory -i inventory.yaml --graph
+@all:
+  |--@ungrouped:
+  |--@master:
+  |  |--control-plane
+  |--@workers:
+  |  |--worker-0
+  |  |--worker-1
+
+```
+
+From above we can see that node `control-plane` is in group `master` and nodes `worker-0` and `worker-1` are in group `worker`
