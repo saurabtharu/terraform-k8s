@@ -508,3 +508,12 @@ user@my-computer ~/k8s-terraform-ansible (master)> ansible-inventory -i inventor
 ```
 
 From above we can see that node `control-plane` is in group `master` and nodes `worker-0` and `worker-1` are in group `worker`
+
+
+## Step 6: Writing Ansible playbook
+
+create ansible playbook as in file `playbook.yml` 
+
+`ansible-playbook -i inventory.yml playbook.yml`
+
+asnible
