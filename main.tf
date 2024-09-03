@@ -278,10 +278,10 @@ resource "aws_instance" "k8s-control-plane" {
 
   key_name = aws_key_pair.k8s_setup_key_pair.key_name
   associate_public_ip_address = true
-  security_groups = [
-    aws_security_group.k8s_setup_sg_common.name,
-    aws_security_group.k8s_setup_sg_control_plane.name,
-    aws_security_group.k8s_setup_sg_flannel.name
+  vpc_security_group_ids = [
+    aws_security_group.k8s_setup_sg_common.id,
+    aws_security_group.k8s_setup_sg_control_plane.id,
+    aws_security_group.k8s_setup_sg_flannel.id
   ]
 
   root_block_device {
@@ -352,7 +352,7 @@ resource "ansible_host" "k8s_setup_worker_node" {
     aws_instance.k8s-data-plane
   ]
 
-  count = 2
+  count = var.data_plane_count
   name = "worker-${count.index}"
   groups = ["workers"]
   variables = {

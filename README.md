@@ -3,9 +3,9 @@
 
 ## Prerequisite Tool
 
-- [terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
-- [ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#pipx-install) 
-- [aws cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- [`terraform`](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
+- [`ansible`](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#pipx-install) 
+- [`aws cli`](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
 ## Usage
 

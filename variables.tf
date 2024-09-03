@@ -16,8 +16,7 @@ variable "rhel_ami" {
 variable "data_plane_count" {
   type = number
   description = "The number of worker nodes (data plane) in cluster"
-  default = 2
-
+  default = 3
 }
 
 
