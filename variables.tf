@@ -4,9 +4,6 @@ variable "key_pair_name" {
   default = "setup_key"
 }
 
-
-
-
 variable "rhel_ami" {
   type = string
   description = "ami id for EC2 instance"
