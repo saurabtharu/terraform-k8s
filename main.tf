@@ -55,7 +55,6 @@ resource "aws_internet_gateway" "k8s_setup_igw" {
   tags = {
     Name = "K8s Setup Internet Gateway"
   }
-
 }
 
 ## 4. custom route table setup
@@ -97,7 +96,7 @@ resource "aws_security_group" "k8s_setup_sg_common" {
   tags = {
     Name: "K8s Setup Common Security Group"
   }
-
+  vpc_id = aws_vpc.k8s_setup_vpc.id
 
   // inbound rules
   ingress {
@@ -140,6 +139,7 @@ resource "aws_security_group" "k8s_setup_sg_control_plane" {
   tags = {
     Name: "K8s Setup Security Group : Control Plane"
   }
+  vpc_id = aws_vpc.k8s_setup_vpc.id
   
   ingress {
     description = "Kubernetes API server"
@@ -173,7 +173,6 @@ resource "aws_security_group" "k8s_setup_sg_control_plane" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-
   ingress {
     description = "etcd server client API"
     from_port = 2379
@@ -190,6 +189,7 @@ resource "aws_security_group" "k8s_setup_sg_data_plane" {
   tags = {
     Name: "K8s Setup Security Group : Data Plane"
   }
+  vpc_id = aws_vpc.k8s_setup_vpc.id
 
   ingress {
     description = "Kubelet API"
@@ -223,6 +223,7 @@ resource "aws_security_group" "k8s_setup_sg_flannel" {
   tags = {
     Name = "K8s Setup Security Group : Flannel"
   }
+  vpc_id = aws_vpc.k8s_setup_vpc.id
 
   ingress {
     description = "UDP Backend"
@@ -275,6 +276,7 @@ resource "aws_key_pair" "k8s_setup_key_pair" {
 resource "aws_instance" "k8s-control-plane" {
   ami      = var.rhel_ami
   instance_type = "t2.medium"
+  subnet_id = aws_subnet.k8s_setup_subnet.id
 
   key_name = aws_key_pair.k8s_setup_key_pair.key_name
   associate_public_ip_address = true
@@ -305,14 +307,15 @@ resource "aws_instance" "k8s-data-plane" {
   count = var.data_plane_count
   ami = var.rhel_ami
   instance_type = var.k8s_setup_instance_type
+  subnet_id = aws_subnet.k8s_setup_subnet.id
 
   key_name = aws_key_pair.k8s_setup_key_pair.key_name
   associate_public_ip_address = true
   
-  security_groups = [
-    aws_security_group.k8s_setup_sg_common.name,
-    aws_security_group.k8s_setup_sg_data_plane.name,
-    aws_security_group.k8s_setup_sg_flannel.name
+  vpc_security_group_ids = [
+    aws_security_group.k8s_setup_sg_common.id,
+    aws_security_group.k8s_setup_sg_data_plane.id,
+    aws_security_group.k8s_setup_sg_flannel.id
   ]
 
   tags = {
