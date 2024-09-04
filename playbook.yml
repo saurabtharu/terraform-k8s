@@ -5,13 +5,6 @@
   tasks:
     - name: Check connectivity
       ansible.builtin.ping:
-        #    - name: Wait 200 seconds for port 22 to become open and contain "OpenSSH"
-        #      ansible.builtin.wait_for:
-        #        port: 22
-        #        host: "{{ (ansible_ssh_host | default(ansible_host)) | default(inventory_hostname) }}"
-        #        search_regex: OpenSSH
-        #        delay: 10
-        #        timeout: 200
 
     - name: Set a hostname
       ansible.builtin.hostname:
@@ -98,7 +91,7 @@
       ansible.builtin.shell: yum versionlock add kubelet kubeadm kubectl
 
 
-- name: Setup master node (control-plane)
+- name: Setting up master node (control-plane)
   hosts: master
   become: true
   tasks:
@@ -118,30 +111,18 @@
     - name: set the correct permission on kubeconfig file
       ansible.builtin.shell: sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-
-
     - name: install flannel
       ansible.builtin.shell: kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 
-
-
-    - name: Copy kubeconfig file locally
-      ansible.builtin.fetch:
-        src: $HOME/.kube/config
-        dest: /tmp/kubeconfig/
-        flat: yes
-
     - name: Generate join token for the worker node 
       ansible.builtin.shell: sudo kubeadm token create --print-join-command
-      register: join_node_token
+      register: join_node_token_command
 
     - name: Save join command as variable
       ansible.builtin.set_fact:
-        join_node: "{{ join_node_token.stdout_lines[0] }}"
+        join_node: "{{ join_node_token_command.stdout_lines[0] }}"
 
-
-
-- name: Setup Worker node
+- name: Setting up Worker node (data-plane)
   hosts: workers
   become: true
   tasks:
